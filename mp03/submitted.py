@@ -222,6 +222,7 @@ def viterbi(test, train):
 
     return sentenceList
 
+    # INEFFICIENT METHOD OF USING LISTS AND DICTIONARIES; TESTS TOOK TOO LONG TO FULLY DEBUG; NEW APPROACH WITH SETS AND DEFAULT DICTIONARIES
     # # declare an empty list to store all words and all tags and all word tag pairs that occur in the test data set (for ease of constructing trellis)
     # wordList = []
     # tagList = []
