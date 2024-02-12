@@ -29,10 +29,7 @@ def trainPerceptron(train_set, train_labels,  max_iter):
         # loop through each sample in the training set
         for sampleNum in range(numSamples):
             # for each sample, 1) find the classifier output
-            result = b
-            # loop through each feature of each sample
-            for featureNum in range(numFeatures):
-                result += W[featureNum]*train_set[sampleNum][featureNum]
+            result = np.sum(W*train_set[sampleNum]) + b
             if result > 0: classifierOutput = 1
             else: classifierOutput = 0
             # 2) update the weight vectors based on classifier output and actual output/labels 
@@ -60,10 +57,7 @@ def classifyPerceptron(train_set, train_labels, dev_set, max_iter):
     dev_labels = []
     # loop through each sample in dev_set
     for sampleNum in range(np.shape(dev_set)[0]):
-        result = bTrained
-        # loop through each feature of each sample
-        for featureNum in range(np.shape(dev_set)[1]):
-            result += WTrained[featureNum]*dev_set[sampleNum][featureNum]
+        result = np.sum(WTrained*dev_set[sampleNum]) + bTrained
         # if result is > 0, classify 1; else, classify 0
         if result > 0: dev_labels.append(1)
         if result <= 0: dev_labels.append(0)
