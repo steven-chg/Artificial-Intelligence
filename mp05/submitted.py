@@ -11,7 +11,16 @@ def create_sequential_layers():
         2. a sigmoid activation layer,
         3. a linear layer with 3 input features and 5 output features.
     """
-    raise NotImplementedError("You need to write this part!")
+    # raise NotImplementedError("You need to write this part!")
+
+    block = torch.nn.Sequential(
+        torch.nn.Linear(2, 3),
+        torch.nn.Sigmoid(),
+        torch.nn.Linear(3, 5)
+    )
+
+    return block
+
 
 
 def create_loss_function():
@@ -21,7 +30,11 @@ def create_loss_function():
     Requirements: Return a loss function from the nn module that is suitable for
     multi-class classification.
     """
-    raise NotImplementedError("You need to write this part!")
+    # raise NotImplementedError("You need to write this part!")
+
+    loss_function = torch.nn.CrossEntropyLoss()
+
+    return loss_function
 
 
 class NeuralNet(torch.nn.Module):
@@ -31,8 +44,12 @@ class NeuralNet(torch.nn.Module):
         """
         super().__init__()
         ################# Your Code Starts Here #################
-
-        raise NotImplementedError("You need to write this part!")
+        # raise NotImplementedError("You need to write this part!")
+        self.linear_relu_stack = torch.nn.Sequential(
+            torch.nn.Linear(2883, 140),
+            torch.nn.ReLU(),
+            torch.nn.Linear(140, 20),
+        )
         ################## Your Code Ends here ##################
 
     def forward(self, x):
@@ -46,8 +63,8 @@ class NeuralNet(torch.nn.Module):
             y:      an (N, output_size) tensor of output from the network
         """
         ################# Your Code Starts Here #################
-
-        raise NotImplementedError("You need to write this part!")
+        # raise NotImplementedError("You need to write this part!")
+        y = self.linear_relu_stack(x)
         return y
         ################## Your Code Ends here ##################
 
@@ -71,10 +88,27 @@ def train(train_dataloader, epochs):
     """
     # Create an instance of NeuralNet, a loss function, and an optimizer
     model = NeuralNet()
-    loss_fn = None
-    optimizer = None
+    loss_fn = torch.nn.CrossEntropyLoss()
+    optimizer = torch.optim.Adam(params=model.parameters(), lr=5e-3)
+    loss_values = []
 
-    raise NotImplementedError("You need to write this part!")
+    # iterate over training set for epochs many times
+    for epoch in range (epochs):
+        # iterate and train over each batch 
+        for features, labels in train_dataloader:
+            # get the prediction and loss
+            y_pred = model.forward(features)
+            loss = loss_fn(y_pred, labels)
+
+            # perform backpropogation and gradient descent
+            loss.backward()
+            optimizer.step()
+            optimizer.zero_grad()
+
+            # track loss values 
+            loss_values.append(loss)
+
+    # raise NotImplementedError("You need to write this part!")
     ################## Your Code Ends here ##################
 
     return model

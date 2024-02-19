@@ -83,7 +83,7 @@ class Test(unittest.TestCase):
         pred_values = pred_values.detach().numpy()
         pred_labels = np.argmax(pred_values, axis=1)  # Predicted labels
         # Error handling
-        self.assertEquals(
+        self.assertEqual(
             len(pred_labels),
             len(self.test_labels),
             "Incorrect size of predicted labels.",
