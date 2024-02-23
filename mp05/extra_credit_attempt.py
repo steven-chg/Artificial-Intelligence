@@ -45,13 +45,30 @@ class NeuralNet(torch.nn.Module):
         super().__init__()
         ################# Your Code Starts Here #################
         # raise NotImplementedError("You need to write this part!")
+        
+        # FOLLOWING CONVOLUTION CODE REFERENCES CAMPUSWIRE POSTS
+        # self.conv2d = torch.nn.Sequential(
+        #     # torch.nn.Conv2d(3, 16, 5),
+        #     # torch.nn.Conv2d(16, 32, 5),             
+        #     # torch.nn.AdaptiveAvgPool2d((6,6))
+        #     torch.nn.functional.max_pool2d(torch.nn.functional.relu(torch.nn.Conv2d(3, 16, 5)), (6, 6)),     
+        #     torch.nn.functional.max_pool2d(torch.nn.functional.relu(torch.nn.Conv2d(16, 32, 5)), (6, 6)) 
+        # )
+
+        self.conv1 = torch.nn.Conv2d(3, 32, 2)
+        self.conv2 = torch.nn.Conv2d(32, 64, 2)
 
         self.linear_relu_stack = torch.nn.Sequential(
+            torch.nn.Linear(32*5*5, 160),
+            torch.nn.ReLU(),
+            torch.nn.Linear(160, 5)
+        )
+
+        self.linear_relu_last = torch.nn.Sequential(
             torch.nn.Linear(2883, 160),
             torch.nn.ReLU(),
             torch.nn.Linear(160, 5)        
         )
-
         ################## Your Code Ends here ##################
 
     def forward(self, x):
@@ -67,9 +84,28 @@ class NeuralNet(torch.nn.Module):
         ################# Your Code Starts Here #################
         # raise NotImplementedError("You need to write this part!")
 
-        y = self.linear_relu_stack(x)
+        if x.shape != torch.Size([100, 2883]):
+            y = self.linear_relu_last(x)
+        
+        else:
+            # FOLLOWING CODE REFERENCES CAMPUSWIRE POSTS
+            # unflatten for 2d convolution; 100 - batch size; 3 - number of input channels; 31, 31 - each channel has size 31x31
+            x = x.reshape(100, 3, 31, 31)
+
+            # perform convolution
+            x = self.conv1(x)
+            x = torch.nn.functional.relu(x)
+            x = torch.nn.functional.max_pool2d(x, (6, 6))
+            # print(x.shape)
+            # x = torch.nn.functional.max_pool2d(torch.nn.functional.relu(self.conv2(x)), (6, 6))
+
+            # # flatten all dimensions except batch dimension
+            x = torch.flatten(x, 1)
+
+            # apply linear relu linear 
+            y = self.linear_relu_stack(x)
+
         return y
-    
         ################## Your Code Ends here ##################
 
 
