@@ -30,23 +30,16 @@ def bfs(maze):
     """
     #TODO: Implement bfs function
 
-    """
-    Possible Maze API Calls
-    1) maze.navigable(i, j) (to verify whether to add neighboring cells into the queue; don't add wall cells)
-    2) maze.legend.waypoint (to verify whether we have reached the end point)
-    3) maze.start (to get the starting point)
-    4) maze.neighbors_all(i, j) (returns a tuple of sequence of all navigable neighbors of cell (i, j))
-    """
-
-    # BFS Implementation Using FIFO Queue
-
     # declare a 2D array to store the previous node of each node visited 
     parent_info = [[(-1, -1) for col in range(maze.size.x)] for row in range(maze.size.y)]
     parent_info[maze.start[0]][maze.start[1]] = (-2, -2)
 
+    # FIFO queue and set to track visited cells
     q = queue.Queue()
     q.put(maze.start)
     visited = set()
+
+    # boundary checks
     maxX = maze.size.x - 1
     maxY = maze.size.y - 1
 
@@ -56,7 +49,7 @@ def bfs(maze):
     # BFS traverse until we reach the waypoint
     while not q.empty():
         currentCell = q.get()
-        # we need to account for the possibility that multiple instances of the same cell are on the queue
+        # we need to account for the possibility of having multiple instances of the same cell on the queue
         while(currentCell in visited):
             currentCell = q.get()
         visited.add(currentCell)
@@ -72,7 +65,6 @@ def bfs(maze):
             newCol = newCell[1]
             # condition checks (boundary, visited)
             if newRow >= 0 and newRow <= maxY and newCol >= 0 and newCol <= maxX and newCell not in visited:
-                # add to queue
                 q.put(newCell)
                 # set up parent information (ONLY IF IT HASN"T ALREADY BEEN SET UP YET)
                 if parent_info[newCell[0]][newCell[1]] == (-1, -1):
@@ -113,14 +105,60 @@ def astar_single(maze):
     #TODO: Implement astar_single
 
     wayPoint = maze.waypoints[0]
+    # declare a 2D array to store the previous node of each node visited 
+    parent_info = [[(-1, -1) for col in range(maze.size.x)] for row in range(maze.size.y)]
+    parent_info[maze.start[0]][maze.start[1]] = (-2, -2)
 
-    # Heuristic 
-    # max(abs(currentCell[0] - wayPoint[0]), abs(currentCell[1] - wayPoint[1]))
+    # priority queue stores the f value as well as the cell coordinates
+    q = queue.PriorityQueue()
+    startF = 0 + max(abs(maze.start[0] - wayPoint[0]), abs(maze.start[1] - wayPoint[1]))
+    q.put((startF, maze.start))
 
+    # set to track visited cells & boundary checks
+    visited = set()
+    maxX = maze.size.x - 1
+    maxY = maze.size.y - 1
 
+    while not q.empty():
+        currentFVal, currentCell = q.get()
+        # we need to account for the possibility that multiple instances of the same cell are on the queue
+        while(currentCell in visited):
+            currentFVal, currentCell = q.get()
+        visited.add(currentCell)
 
+        # if we have reached the waypoint, then break out of while loop
+        if maze[currentCell] == maze.legend.waypoint:
+            break
 
-    return []
+        # find g value of current cell 
+        currentG = currentFVal - max(abs(currentCell[0] - wayPoint[0]), abs(currentCell[1] - wayPoint[1]))
+        
+        # add all neighbors (that are navigable) to the queue
+        for newCell in maze.neighbors_all(currentCell[0], currentCell[1]):
+            newRow = newCell[0]
+            newCol = newCell[1]
+
+            # find g and h values of new cell
+            newH = max(abs(newRow - wayPoint[0]), abs(newCol - wayPoint[1]))
+            newG = currentG + 1
+
+            # condition checks (boundary, visited)
+            if newRow >= 0 and newRow <= maxY and newCol >= 0 and newCol <= maxX and newCell not in visited:
+                q.put((newG + newH, newCell))
+                # set up parent information (ONLY IF IT HASN"T ALREADY BEEN SET UP YET)
+                if parent_info[newCell[0]][newCell[1]] == (-1, -1):
+                    parent_info[newCell[0]][newCell[1]] = currentCell
+
+    # Find the path using parent_info 
+    path = []
+    currentPoint = maze.waypoints[0]
+    # loop until we reach the start point, which has parent info (-2, -2)
+    while parent_info[currentPoint[0]][currentPoint[1]] != (-2, -2):
+        path.insert(0, currentPoint)
+        currentPoint = parent_info[currentPoint[0]][currentPoint[1]]
+    path.insert(0, maze.start)
+
+    return path
 
 # This function is for Extra Credits, please begin this part after finishing previous two functions
 def astar_multiple(maze):
