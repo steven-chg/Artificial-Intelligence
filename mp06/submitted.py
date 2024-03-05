@@ -104,10 +104,13 @@ def astar_single(maze):
     """
     #TODO: Implement astar_single
 
+    # BUGLOG: Had to account for the possibility nodes A, B both having neighbor C, but A with higher priority than B yet Start -> A -> C > Start -> B -> C
+    # In other words, we need to update parent info of a cell if there is a shorter path to it
+
     wayPoint = maze.waypoints[0]
-    # declare a 2D array to store the previous node of each node visited 
-    parent_info = [[(-1, -1) for col in range(maze.size.x)] for row in range(maze.size.y)]
-    parent_info[maze.start[0]][maze.start[1]] = (-2, -2)
+    # declare a 2D array to store the previous node of each node visited (UPDATE: also needs to store g value)
+    parent_info = [[((-1, -1), -1) for col in range(maze.size.x)] for row in range(maze.size.y)]
+    parent_info[maze.start[0]][maze.start[1]] = ((-2, -2), 0)
 
     # priority queue stores the f value as well as the cell coordinates
     q = queue.PriorityQueue()
@@ -120,10 +123,10 @@ def astar_single(maze):
     maxY = maze.size.y - 1
 
     while not q.empty():
-        currentFVal, currentCell = q.get()
+        currentCell = q.get()[1]
         # we need to account for the possibility that multiple instances of the same cell are on the queue
         while(currentCell in visited):
-            currentFVal, currentCell = q.get()
+            currentCell = q.get()[1]
         visited.add(currentCell)
 
         # if we have reached the waypoint, then break out of while loop
@@ -131,7 +134,8 @@ def astar_single(maze):
             break
 
         # find g value of current cell 
-        currentG = currentFVal - max(abs(currentCell[0] - wayPoint[0]), abs(currentCell[1] - wayPoint[1]))
+        currentG = parent_info[currentCell[0]][currentCell[1]][1]
+        # currentG = currentFVal - max(abs(currentCell[0] - wayPoint[0]), abs(currentCell[1] - wayPoint[1]))
         
         # add all neighbors (that are navigable) to the queue
         for newCell in maze.neighbors_all(currentCell[0], currentCell[1]):
@@ -145,19 +149,21 @@ def astar_single(maze):
             # condition checks (boundary, visited)
             if newRow >= 0 and newRow <= maxY and newCol >= 0 and newCol <= maxX and newCell not in visited:
                 q.put((newG + newH, newCell))
-                # set up parent information (ONLY IF IT HASN"T ALREADY BEEN SET UP YET)
-                if parent_info[newCell[0]][newCell[1]] == (-1, -1):
-                    parent_info[newCell[0]][newCell[1]] = currentCell
+                # set up parent information (ONLY IF IT HASN"T ALREADY BEEN SET UP YET; OR IF THERE IS A SHORTER PATH TO IT)
+                oldG = parent_info[newCell[0]][newCell[1]][1]
+                if parent_info[newCell[0]][newCell[1]][0] == (-1, -1) or oldG > newG:
+                    parent_info[newCell[0]][newCell[1]] = (currentCell, newG)
 
     # Find the path using parent_info 
     path = []
     currentPoint = maze.waypoints[0]
     # loop until we reach the start point, which has parent info (-2, -2)
-    while parent_info[currentPoint[0]][currentPoint[1]] != (-2, -2):
+    while parent_info[currentPoint[0]][currentPoint[1]][0] != (-2, -2):
         path.insert(0, currentPoint)
-        currentPoint = parent_info[currentPoint[0]][currentPoint[1]]
-    path.insert(0, maze.start)
-
+        currentPoint = parent_info[currentPoint[0]][currentPoint[1]][0]
+    # insert start point into path
+    path.insert(0, currentPoint)
+    
     return path
 
 # This function is for Extra Credits, please begin this part after finishing previous two functions
