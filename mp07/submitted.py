@@ -133,9 +133,67 @@ def alphabeta(board, side, flags, depth, alpha=-math.inf, beta=math.inf):
       flags (list of flags): list of flags, used by generateMoves and makeMove
       depth (int >=0): depth of the search (number of moves)
     '''
-    raise NotImplementedError("you need to write this!")
-    
+    # raise NotImplementedError("you need to write this!")
 
+    '''
+    Notes
+    - min node can update beta; max node can update alpha
+    - if beta ever falls below or equals alpha (if beta <= alpha), prune any remaining children and return
+    '''
+  
+    # base case, when depth is 0, evaluate the current board state, (no more moves to take, so return empty moveList and moveTree)
+    if depth == 0:
+        return [], {}, chess.lib.heuristics.evaluate(board)
+    
+    # initialize empty movelist list and empty moveTree dictionary
+    moveList = []
+    moveTree = {}
+
+    # Max/White player next; choose a path through this tree that maximizes the heuristic value of the final board
+    if side == False:
+        # initialize maxValue to negative infinity
+        maxValue = float('-inf')
+        # loop through all possible moves from current board condition
+        for maxMove in generateMoves(board, side, flags):
+            # make the move and recursively call alphabeta to explore all possible future moves/states
+            newMaxSide, newMaxBoard, newMaxFlags = chess.lib.makeMove(side, board, maxMove[0], maxMove[1], flags, maxMove[2])
+            rMaxList, rMaxTree, rMaxValue = alphabeta(newMaxBoard, newMaxSide, newMaxFlags, depth-1, alpha, beta)
+            # update moveTree with subtree returned from alphabeta call; key will be the move that generated the subtree
+            moveTree[encode(maxMove[0], maxMove[1], maxMove[2])] = rMaxTree
+            # update maxValue and the optimal path if rMaxValue from recursive call greater than current maxValue
+            if rMaxValue > maxValue:
+                maxValue = rMaxValue
+                moveList = [maxMove] + rMaxList
+
+            # max node, so we need to update alpha based on the subtree return value 
+            alpha = max(alpha, rMaxValue)
+            # if beta ever falls below or equals alpha, then break and do not evaluate any more children/other possible moves
+            if beta <= alpha:
+                break
+        return moveList, moveTree, maxValue
+    # Min/Black player next; choose a path through this tree that minimizes the heuristic value of the final board
+    elif side == True:
+        # initialize minValue to positive infinity
+        minValue = float('inf')
+        # loop through all possible moves from current board condition
+        for minMove in generateMoves(board, side, flags):
+            # make the move and recursively call alphabeta to explore all possible future moves/states
+            newMinSide, newMinBoard, newMinFlags = chess.lib.makeMove(side, board, minMove[0], minMove[1], flags, minMove[2])
+            rMinList, rMinTree, rMinValue = alphabeta(newMinBoard, newMinSide, newMinFlags, depth-1, alpha, beta)
+            # update moveTree with subtree returned from alphabeta call; key will be the move that generated the subtree
+            moveTree[encode(minMove[0], minMove[1], minMove[2])] = rMinTree
+            # update minValue and the optimal path if rMinValue from recursive call is less than current minValue
+            if rMinValue < minValue:
+                minValue = rMinValue
+                moveList = [minMove] + rMinList
+  
+            # min node, so we need to update beta based on the subtree return value
+            beta = min(beta, rMinValue)
+            # if beta ever falls below or equals alpha, then break and do not evaluate any more children/other possible moves
+            if beta <= alpha:
+                break
+        return moveList, moveTree, minValue
+    
 # FROM PAST SEMESTERS
 # def stochastic(board, side, flags, depth, breadth, chooser):
 #     '''
