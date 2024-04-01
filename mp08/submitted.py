@@ -44,7 +44,16 @@ def utility_partials(R, x):
 
     HINT: You may find the functions sig2 and dsig2 to be useful.
     '''
-    raise RuntimeError("You need to write this!")
+    # raise RuntimeError("You need to write this!")
+
+    sigmoidP0 = sig2(x[0])
+    sigmoidP1 = sig2(x[1])
+
+    # apply partial derivatives TRY TO UNDERSTAND BETTER
+    partial_x0 = np.dot(dsig2(sigmoidP0), np.dot(R[0], sigmoidP1))
+    partial_x1 = np.dot(sigmoidP0, np.dot(R[1], dsig2(sigmoidP1)))
+
+    partial = np.array([partial_x0, partial_x1])
     return partial
 
 def episodic_game_gradient_ascent(init, rewards, nsteps, learningrate):
@@ -69,7 +78,23 @@ def episodic_game_gradient_ascent(init, rewards, nsteps, learningrate):
     The utility (expected reward) for player i is sig2(logits[t,0])@rewards[i,:,:]@sig2(logits[t,1]),
     and the next logits are logits[t+1,i] = logits[t,i] + learningrate * utility_partials(rewards, logits[t,:]).
     '''
-    raise RuntimeError("You need to write this!")            
+    # raise RuntimeError("You need to write this!")  
+
+    # initialize logits and utilities
+    logits = np.zeros((nsteps, 2))
+    logits[0] = init
+    utilities = np.zeros((nsteps, 2))
+
+    # perform nsteps gradient descent
+    for t in range(nsteps-1):
+        # calculate the utilities of current iteration t and store it in utilities
+        utilities[t][0] = np.dot(sig2(logits[t][0]), np.dot(rewards[0], sig2(logits[t][1])))
+        utilities[t][1] = np.dot(sig2(logits[t][0]), np.dot(rewards[1], sig2(logits[t][1])))
+
+        # find the next logits
+        logits[t+1][0] = logits[t][0] + learningrate * utility_partials(rewards, logits[t])[0]
+        logits[t+1][1] = logits[t][1] + learningrate * utility_partials(rewards, logits[t])[1]
+
     return logits, utilities
     
 def utility_hessian(R, x):
@@ -87,7 +112,18 @@ def utility_hessian(R, x):
 
     HINT: You may find the functions sig2, dsig2, and Hsig2 to be useful.
     '''
-    raise RuntimeError("You need to write this!")            
+    # raise RuntimeError("You need to write this!")    
+
+    sigmoidP0 = sig2(x[0])
+    sigmoidP1 = sig2(x[1])
+
+    # apply partial derivatives
+    partial_x0x0 = np.dot(Hsig2(sigmoidP0), np.dot(R[0], sigmoidP1))
+    partial_x0x1 = np.dot(dsig2(sigmoidP0), np.dot(R[0], dsig2(sigmoidP1)))
+    partial_x1x0 = np.dot(dsig2(sigmoidP0), np.dot(R[1], dsig2(sigmoidP1)))
+    partial_x1x1 = np.dot(sigmoidP0, np.dot(R[1], Hsig2(sigmoidP1)))
+
+    hessian = np.array([[partial_x0x0, partial_x0x1], [partial_x1x0, partial_x1x1]])
     return hessian
     
 def episodic_game_corrected_ascent(init, rewards, nsteps, learningrate):
@@ -115,7 +151,25 @@ def episodic_game_corrected_ascent(init, rewards, nsteps, learningrate):
     and if t+1 is less than nsteps, the logits are updated as
     logits[t+1,i] = logits[t,i] + learningrate * (I + symplectic_correction(partials, hessian))@partials
     '''
-    raise RuntimeError("You need to write this!")            
+    # raise RuntimeError("You need to write this!")      
+    
+    # initialize logits and utilities
+    logits = np.zeros((nsteps, 2))
+    logits[0] = init
+    utilities = np.zeros((nsteps, 2))
+
+    # perform nsteps gradient descent
+    for t in range(nsteps-1):
+        # calculate the utilities of current iteration t and store it in utilities
+        utilities[t][0] = np.dot(sig2(logits[t][0]), np.dot(rewards[0], sig2(logits[t][1])))
+        utilities[t][1] = np.dot(sig2(logits[t][0]), np.dot(rewards[1], sig2(logits[t][1])))
+
+        # find the next logits
+        partials = utility_partials(rewards, logits[t])
+        hessian = utility_hessian(rewards, logits[t])
+        logits[t+1][0] = logits[t][0] + learningrate * np.dot((np.eye(2) + symplectic_correction(partials, hessian)), partials)[0]
+        logits[t+1][1] = logits[t][1] + learningrate * np.dot((np.eye(2) + symplectic_correction(partials, hessian)), partials)[1]
+
     return logits, utilities
 
 
@@ -134,6 +188,7 @@ Examples:
 * If you want to repeat your last move with probability 0.8, and the other player's last move 
 with probability 0.2, return [[0.0, 0.8],[0.2, 1.0]].
 '''
-sequential_strategy = 0.5*np.ones((2,2)) # Default: always play uniformly at random
+# sequential_strategy = 0.5*np.ones((2,2)) # Default: always play uniformly at random
+sequential_strategy = np.array([[0, 0], [1, 1]])
 
 
