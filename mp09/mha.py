@@ -79,7 +79,7 @@ class MultiHeadAttention(nn.Module):
 
         d_k = query.size()[3]
         # transpose key for matrix multiplication (query - B x num_heads x T_q x d_k; key - B x num_heads x d_k x T_k)
-        key = key.transpose(2, 3)   
+        key = key.transpose(-2, -1)   
         # multiply Q and K_t and divide by square root of d_k
         QK_t = torch.matmul(query, key) / (d_k ** 0.5)
 
@@ -88,6 +88,12 @@ class MultiHeadAttention(nn.Module):
             # modify key_padding_mask dimension to match QK_t (add 2 more dimensions)
             key_padding_mask = key_padding_mask.unsqueeze(1)
             key_padding_mask = key_padding_mask.unsqueeze(2)
+
+
+            # print(QK_t.size())
+            # print(key_padding_mask.size())
+
+
             # non-zero positions will be ignored
             QK_t = QK_t.masked_fill(key_padding_mask != 0, min_val)
 

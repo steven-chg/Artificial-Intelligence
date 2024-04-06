@@ -115,23 +115,50 @@ class TransformerDecoderLayer(nn.Module):
 
 
 
+
+
+        # self_attn_padding_mask = self_attn_padding_mask[:, :, 0]
+        # print("self_attn_padding_mask")
+        # print(self_attn_padding_mask.size())
+        # print("self attention")
+        # print(self_attn_mask.size())
+
+
+
+
+
+
+
+
+        # x = LayerNorm(x + DropOut(Decoder-Self-Attention(x))
+        self_attention_output = self.self_attn(x, x, x, self_attn_padding_mask, self_attn_mask)
+        dropout_attention_output = self.dropout(self_attention_output)
+        firstSublayerOutput = self.self_attn_layer_norm(x + dropout_attention_output)
+        # have a variable that stores the input to the third sublayer (if self.encoder_attn is None, we use this in the third sublayer)
+        thirdLayerResidual = firstSublayerOutput
         ##### YOUR CODE ENDS HERE #####
 
         ## Implement encoder-decoder attention; dropout comes after encoder_attn
         if self.encoder_attn is not None:
-            pass ### REMOVE THIS AFTER YOU FINISHED THE CODE IN THIS IF STATEMENT!
+            # pass ### REMOVE THIS AFTER YOU FINISHED THE CODE IN THIS IF STATEMENT!
             ##### YOUR CODE STARTS HERE #####
 
-
+            # x = LayerNorm(x + DropOut(Encoder-Decoder-Attention(x, encoder_out)))
+            encoder_attention_output = self.encoder_attn(firstSublayerOutput, encoder_out, encoder_out, encoder_padding_mask, self_attn_mask)
+            dropout_encoder_attention_output = self.dropout(encoder_attention_output)
+            secondSublayerOutput = self.encoder_attn_layer_norm(firstSublayerOutput + dropout_encoder_attention_output)
+            # update the variable storing input to the third sublayer
+            thirdLayerResidual = secondSublayerOutput
 
              ##### YOUR CODE ENDS HERE #####
             
         ## Implement position-wise feed-forward network (hint: it should be the same as in the encoder layer)
         ##### YOUR CODE STARTS HERE #####
 
-
-
-
+        # x = LayerNorm(x + DropOut(FFN(x)))
+        ffn_output = self.fc2(self.activation_fn(self.fc1(thirdLayerResidual)))
+        dropout_ffn_output = self.dropout(ffn_output)
+        x = self.final_layer_norm(thirdLayerResidual + dropout_ffn_output)
 
         ##### YOUR CODE ENDS HERE #####
         return x

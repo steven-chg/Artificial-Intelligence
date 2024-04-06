@@ -160,7 +160,6 @@ class Transformer(nn.Module):
 
         ##### YOUR CODE ENDS HERE #####
 
-
         return enc_output, src_padding_mask
 
     ## You need to fill in the missing code in the forward_decoder method below
@@ -188,18 +187,12 @@ class Transformer(nn.Module):
         ##### YOUR CODE STARTS HERE #####
 
         ## Use the given mask creator functions to create decoder padding mask, and decoder auto-regressive attention mask
-
-
+        decoder_padding_mask = length_to_padding_mask(tgt_lengths)
+        decoder_attention_mask = subsequent_mask(tgt.size()[1])
 
         ## Pass the decoder input and the encoder output into the decoder, with the correct mask(s) 
+        dec_output = self.decoder(tgt_embedded, enc_output, src_padding_mask, decoder_padding_mask, decoder_attention_mask)
 
-
-
-
-
-
-
-    
         ##### YOUR CODE ENDS HERE #####
 
         return dec_output
