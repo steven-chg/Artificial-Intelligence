@@ -88,12 +88,6 @@ class MultiHeadAttention(nn.Module):
             # modify key_padding_mask dimension to match QK_t (add 2 more dimensions)
             key_padding_mask = key_padding_mask.unsqueeze(1)
             key_padding_mask = key_padding_mask.unsqueeze(2)
-
-
-            # print(QK_t.size())
-            # print(key_padding_mask.size())
-
-
             # non-zero positions will be ignored
             QK_t = QK_t.masked_fill(key_padding_mask != 0, min_val)
 

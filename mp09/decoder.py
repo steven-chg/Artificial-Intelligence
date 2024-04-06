@@ -113,29 +113,13 @@ class TransformerDecoderLayer(nn.Module):
         ## Implement decoder self-attention; dropout comes after self_attn
         ##### YOUR CODE STARTS HERE #####
 
-
-
-
-
-        # self_attn_padding_mask = self_attn_padding_mask[:, :, 0]
-        # print("self_attn_padding_mask")
-        # print(self_attn_padding_mask.size())
-        # print("self attention")
-        # print(self_attn_mask.size())
-
-
-
-
-
-
-
-
         # x = LayerNorm(x + DropOut(Decoder-Self-Attention(x))
         self_attention_output = self.self_attn(x, x, x, self_attn_padding_mask, self_attn_mask)
         dropout_attention_output = self.dropout(self_attention_output)
         firstSublayerOutput = self.self_attn_layer_norm(x + dropout_attention_output)
         # have a variable that stores the input to the third sublayer (if self.encoder_attn is None, we use this in the third sublayer)
         thirdLayerResidual = firstSublayerOutput
+        
         ##### YOUR CODE ENDS HERE #####
 
         ## Implement encoder-decoder attention; dropout comes after encoder_attn
@@ -144,7 +128,7 @@ class TransformerDecoderLayer(nn.Module):
             ##### YOUR CODE STARTS HERE #####
 
             # x = LayerNorm(x + DropOut(Encoder-Decoder-Attention(x, encoder_out)))
-            encoder_attention_output = self.encoder_attn(firstSublayerOutput, encoder_out, encoder_out, encoder_padding_mask, self_attn_mask)
+            encoder_attention_output = self.encoder_attn(firstSublayerOutput, encoder_out, encoder_out, encoder_padding_mask)
             dropout_encoder_attention_output = self.dropout(encoder_attention_output)
             secondSublayerOutput = self.encoder_attn_layer_norm(firstSublayerOutput + dropout_encoder_attention_output)
             # update the variable storing input to the third sublayer
