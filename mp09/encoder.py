@@ -90,18 +90,21 @@ class TransformerEncoderLayer(nn.Module):
         ### Implement encoder self-attention, dropout, and then the Add & Norm opertion
         ##### YOUR CODE STARTS HERE #####
 
-
-
-
+        # LayerNorm(residual + DropOut(Self-Attention(x)))
+        self_attention_output = self.self_attn(x, x, x, self_attn_padding_mask)
+        dropout_attention_output = self.dropout(self_attention_output)
+        firstSublayerOutput = self.self_attn_layer_norm(residual + dropout_attention_output)
 
         #### YOUR CODE ENDS HERE #####
 
         ## Implement encoder position-wise feedforward, dropout, and then the Add & Norm opertion
         #### YOUR CODE STARTS HERE #####
 
-
-
-
+        # LayerNorm(residual + DropOut(FFN(x)))
+        residual = firstSublayerOutput  # update residual to be the output of the first sublayer
+        ffn_output = self.fc2(self.activation_fn(self.fc1(firstSublayerOutput)))
+        dropout_ffn_output = self.dropout(ffn_output)
+        x = self.final_layer_norm(residual + dropout_ffn_output)
 
         ##### YOUR CODE ENDS HERE #####
 

@@ -153,10 +153,10 @@ class Transformer(nn.Module):
 
         ##### YOUR CODE STARTS HERE #####
         ## Use the given mask creator functions to create encoder padding mask
-
+        src_padding_mask = length_to_padding_mask(src_lengths)
 
         ## Pass the encoder input into the encoder, with the correct mask(s)
-
+        enc_output = self.encoder(src_embedded, src_padding_mask)
 
         ##### YOUR CODE ENDS HERE #####
 

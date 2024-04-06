@@ -34,10 +34,14 @@ class PositionalEncoding(nn.Module):
 
         ##### YOUR CODE STARTS HERE #####
 
-
-
-
-
+        # find the position and denominator tensors and match them for multiplication
+        pos = torch.arange(0, max_seq_length, 1).unsqueeze(1)
+        den = torch.exp(torch.arange(0, d_model, 2) * (-math.log(10000))/d_model).unsqueeze(0)
+        # set pe[pos, 2i]
+        pe[:, 0::2] = torch.sin(pos * den)
+        # set pe[pos, 2i + 1]
+        pe[:, 1::2] = torch.cos(pos * den)
+ 
         ##### YOUR CODE ENDS HERE #####
 
         self.register_buffer('pe', pe.unsqueeze(0))
@@ -53,5 +57,8 @@ class PositionalEncoding(nn.Module):
 
         """
         ##### YOUR CODE STARTS HERE #####
-
+        
+        # slice pe so it becomes (1, T, d_model)
+        return x + self.pe[:, :x.size()[1], :]
+    
         ##### YOUR CODE ENDS HERE #####

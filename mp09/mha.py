@@ -77,13 +77,37 @@ class MultiHeadAttention(nn.Module):
         ##### YOUR CODE STARTS HERE #####
         ## Use min_val defined above if you want to fill in certain parts of a tensor with the mininum value of a specific data type; use the torch.Tensor.masked_fill function in PyTorch to fill in a bool type mask; You will likely need to use torch.softmax, torch.matmul, torch.Tensor.transpose in your implementation as well, so make sure you look up the definitions in the PyTorch documentation (via a Google Search); also, note that broadcasting in PyTorch works similarly to the behavior in numpy
 
+        d_k = query.size()[3]
+        # transpose key for matrix multiplication (query - B x num_heads x T_q x d_k; key - B x num_heads x d_k x T_k)
+        key = key.transpose(2, 3)   
+        # multiply Q and K_t and divide by square root of d_k
+        QK_t = torch.matmul(query, key) / (d_k ** 0.5)
 
+        # apply key mask if needed
+        if key_padding_mask is not None:
+            # modify key_padding_mask dimension to match QK_t (add 2 more dimensions)
+            key_padding_mask = key_padding_mask.unsqueeze(1)
+            key_padding_mask = key_padding_mask.unsqueeze(2)
+            # non-zero positions will be ignored
+            QK_t = QK_t.masked_fill(key_padding_mask != 0, min_val)
 
+        # apply attention_mask if needed
+        if attention_mask is not None:
+            # modify attention_mask dimension to match QK_t (add 1 more dimension)
+            attention_mask = attention_mask.unsqueeze(1)
+            # non-zero positions will be ignored 
+            QK_t = QK_t.masked_fill(attention_mask != 0, min_val)
 
+        # apply softmax 
+        QK_t = torch.softmax(QK_t, dim = -1)
+
+        # calculate the output
+        x = torch.matmul(QK_t, value)
+        x = x.transpose(1, 2) # transpose to (B, T_q, num_heads, d_k)
 
         ##### YOUR CODE ENDS HERE #####
 
-        x = x.contiguous().view(B, -1, self.num_heads * self.d_k) # (B, T_q, d_model)
+        x = x.contiguous().view(query.size()[0], -1, self.num_heads * self.d_k) # (B, T_q, d_model)
 
         return x
     
@@ -104,10 +128,17 @@ class MultiHeadAttention(nn.Module):
 
         """
         ##### YOUR CODE STARTS HERE #####
+        B = Q.size()[0]
+        q = self.W_q(Q)
+        T_q = Q.size()[1]
+        k = self.W_k(K)
+        T_k = K.size()[1]
+        v = self.W_v(V)
+        T_v = V.size()[1]
 
-
-
-
+        q = q.contiguous().view(B, T_q, self.num_heads, self.d_k).transpose(1, 2)   # transpose(1, 2) to reorder dimensions; swap T_q with num_heads
+        k = k.contiguous().view(B, T_k, self.num_heads, self.d_k).transpose(1, 2)
+        v = v.contiguous().view(B, T_v, self.num_heads, self.d_k).transpose(1, 2)
         ##### YOUR CODE ENDS HERE #####
 
         return q, k, v
