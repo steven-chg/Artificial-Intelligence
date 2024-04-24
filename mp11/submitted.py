@@ -51,7 +51,7 @@ def get_returns(rollout_buffer: utils.RolloutBuffer, discount_factor=0.95):
         if rollout_buffer.terminateds[time] == True:
             maxT = float('inf')
 
-    return torch.FloatTensor(rewardReturn)
+    return torch.tensor(rewardReturn)
 
 def get_advantages(value_net: nn.Module,
                    observations: torch.Tensor,
@@ -120,14 +120,12 @@ def get_vanilla_policy_gradient_loss(policy: nn.Module,
     policyLog = policy(observation)
 
     # select the log values that are used (based on which action taken in each state)
-    selectedLog = torch.zeros(policyLog.size()[0])
-    for i, act in enumerate(action):
-        selectedLog[i] = policyLog[i][act].item()
+    selectedLog = torch.tensor([policyLog[i][act].item() for i, act in enumerate(action)], requires_grad=True)
 
     # calculate the final value (make return_or_advantage single dimension in order to perform dot product)
-    finalValue = -1 * (torch.dot(selectedLog, return_or_advantage.squeeze(dim=1))) / policyLog.size()[0]
+    finalValue = (torch.dot(selectedLog, return_or_advantage.squeeze(dim=1))) / policyLog.size()[0]
 
-    return finalValue 
+    return -finalValue 
 
 def collect_rollouts(env: utils.EnvInterface,
                      policy: nn.Module,
