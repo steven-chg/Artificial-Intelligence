@@ -23,7 +23,35 @@ def get_returns(rollout_buffer: utils.RolloutBuffer, discount_factor=0.95):
                 Returns for the entire set of rollouts
     """
     # YOUR CODE HERE
-    raise NotImplementedError()
+    # raise NotImplementedError()
+
+    # initialize empty reward return list 
+    rewardReturn = []
+
+    maxT = float('inf')
+    # iterate through all time steps
+    for time in range (rollout_buffer.rewards.size()[0]):
+        # find the next maxT if necessary
+        if maxT == float('inf'):
+            # loop to find maxT
+            temp = time 
+            while(rollout_buffer.terminateds[temp] == False):
+                temp = temp + 1
+            maxT = temp
+
+        # find the reward of the current time step
+        i = time
+        runningSum = 0
+        while i <= maxT:
+            runningSum = runningSum + rollout_buffer.rewards[i] * (discount_factor**(i - time))
+            i = i + 1
+        rewardReturn.append([runningSum])
+
+        # if this timestep is the terminal reward for the rollout, reset maxT to inf to start the next rollout
+        if rollout_buffer.terminateds[time] == True:
+            maxT = float('inf')
+
+    return torch.FloatTensor(rewardReturn)
 
 def get_advantages(value_net: nn.Module,
                    observations: torch.Tensor,
@@ -86,7 +114,20 @@ def get_vanilla_policy_gradient_loss(policy: nn.Module,
                 Vanilla policy gradient loss for the given return or advantage
     """
     # YOUR CODE HERE
-    raise NotImplementedError()
+    # raise NotImplementedError()
+
+    # find the log of actions and states
+    policyLog = policy(observation)
+
+    # select the log values that are used (based on which action taken in each state)
+    selectedLog = torch.zeros(policyLog.size()[0])
+    for i, act in enumerate(action):
+        selectedLog[i] = policyLog[i][act].item()
+
+    # calculate the final value (make return_or_advantage single dimension in order to perform dot product)
+    finalValue = -1 * (torch.dot(selectedLog, return_or_advantage.squeeze(dim=1))) / policyLog.size()[0]
+
+    return finalValue 
 
 def collect_rollouts(env: utils.EnvInterface,
                      policy: nn.Module,
