@@ -163,8 +163,8 @@ def collect_rollouts(env: utils.EnvInterface,
             # sample an action based on the logits
             action = utils.distribution_sample(logits, seed=seed)
 
-            # execute the action on the environment with env.step (step outputs observation and reward alongside whether the environment has terminated)
-            observation, reward, terminated = env.step(action)
+            # execute the action on the environment with env.step (step outputs observation, whether the environment has terminated, and reward)
+            observation, terminated, reward = env.step(action)
 
             # save the step to the rollout buffer (function header rollout_buffer.add(self, action, logits, observation, terminated, reward))
             rollout_buffer.add(action, logits, obs, terminated, reward)
