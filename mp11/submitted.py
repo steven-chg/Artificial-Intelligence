@@ -154,7 +154,24 @@ def collect_rollouts(env: utils.EnvInterface,
             # 5) Think about what the observation should be for the next step.
             # Note: final_reward_mean is not required for grading, but not having breaks the notebook. Variable reward
             # should be the last reward of the rollout for it to work.
-            raise NotImplementedError()
+            # raise NotImplementedError()
+
+            # evaluate the policy to get logits
+            with torch.no_grad():
+                logits = policy(obs)
+
+            # sample an action based on the logits
+            action = utils.distribution_sample(logits, seed=seed)
+
+            # execute the action on the environment with env.step (step outputs observation and reward alongside whether the environment has terminated)
+            observation, reward, terminated = env.step(action)
+
+            # save the step to the rollout buffer (function header rollout_buffer.add(self, action, logits, observation, terminated, reward))
+            rollout_buffer.add(action, logits, obs, terminated, reward)
+
+            # update observation
+            obs = observation
+
             # END YOUR CODE
         final_reward_mean.append(reward)
     policy.train() # Put the policy back in train mode
@@ -220,6 +237,7 @@ def train_policy_gradient(env: utils.EnvInterface,
     losses_critic = []
     final_rewards = []
     lr = []
+    advantages = None # added to avoid error of referencing before declaration
     while r < rollouts:
         rollout_buffer, final_reward = collect_rollouts(env, policy, rollouts_before_training, r, rollouts, seed=rollout_seed)
         r += rollouts_before_training
@@ -242,16 +260,16 @@ def train_policy_gradient(env: utils.EnvInterface,
                 # Everything should be a torch tensor, as specified by the inputs to get_PPO_policy_gradient_loss and
                 # get_vanilla_policy_gradient_loss
 
-                raise NotImplementedError()
+                # raise NotImplementedError()
                 policy_gradient_kwargs = dict(
-                    policy=                 None, # Fill in 
-                    value_net=              None, # Fill in
-                    critic=                 None, # Fill in
-                    observation=            None, # Fill in
-                    old_logits=             None, # Fill in
-                    action=                 None, # Fill in
-                    return_or_advantage=    None, # Fill in
-                    returns=                None, # Fill in 
+                    policy=                 policy, # Fill in 
+                    value_net=              value_net, # Fill in
+                    critic=                 losses_critic, # Fill in
+                    observation=            rollout_buffer.observations, # Fill in
+                    old_logits=             rollout_buffer.old_logits, # Fill in
+                    action=                 rollout_buffer.actions, # Fill in
+                    return_or_advantage=    advantages, # Fill in
+                    returns=                returns, # Fill in 
                     ppo_clip=               ppo_clip
                 )
 
