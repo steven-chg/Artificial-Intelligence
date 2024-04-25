@@ -51,7 +51,7 @@ def get_returns(rollout_buffer: utils.RolloutBuffer, discount_factor=0.95):
         if rollout_buffer.terminateds[time] == True:
             maxT = float('inf')
 
-    return torch.tensor(rewardReturn)
+    return torch.FloatTensor(rewardReturn)
 
 def get_advantages(value_net: nn.Module,
                    observations: torch.Tensor,
@@ -73,7 +73,19 @@ def get_advantages(value_net: nn.Module,
     # You should calculate the advantage, then standardize it (subtract out mean, then divide by standard deviation
     # plus epsilon.) Use 1e-10 for epsilon (defined as EPSILON at top of file). Epsilon is solely there to prevent
     # divide-by-zero errors.
-    raise NotImplementedError()
+    # raise NotImplementedError()
+
+    # calculate V(st) or mean future returns
+    with torch.no_grad():
+        meanFutureReturn = value_net(observations)
+    
+    # calculate advantage 
+    advantage = returns - meanFutureReturn
+
+    # standardize the advantage
+    standardizedAdvantage = (advantage - torch.mean(advantage)) / (torch.std(advantage) + EPSILON)
+
+    return standardizedAdvantage
 
 def get_value_net_loss(value_net: nn.Module,
                        observation: Tensor,
@@ -92,7 +104,12 @@ def get_value_net_loss(value_net: nn.Module,
                 Value network loss for the given returns
     """
     # YOUR CODE HERE
-    raise NotImplementedError()
+    # raise NotImplementedError()
+
+    # define MSE loss (arguments are input/training loss and target/returns)
+    MSEloss = nn.MSELoss() 
+
+    return MSEloss(value_net(observation), returns)
 
 def get_vanilla_policy_gradient_loss(policy: nn.Module,
                                 observation: Tensor,
@@ -121,6 +138,7 @@ def get_vanilla_policy_gradient_loss(policy: nn.Module,
 
     # select the log values that are used (based on which action taken in each state)
     selectedLog = torch.tensor([policyLog[i][act].item() for i, act in enumerate(action)], requires_grad=True)
+    selectedLog = selectedLog.to(return_or_advantage.dtype) # convert to float tensor to avoid dot product error
 
     # calculate the final value (make return_or_advantage single dimension in order to perform dot product)
     finalValue = (torch.dot(selectedLog, return_or_advantage.squeeze(dim=1))) / policyLog.size()[0]
@@ -237,11 +255,11 @@ def train_policy_gradient(env: utils.EnvInterface,
     losses_critic = []
     final_rewards = []
     lr = []
-    advantages = None # added to avoid error of referencing before declaration
     while r < rollouts:
         rollout_buffer, final_reward = collect_rollouts(env, policy, rollouts_before_training, r, rollouts, seed=rollout_seed)
         r += rollouts_before_training
         returns = get_returns(rollout_buffer)
+        advantages = returns # added to avoid error of referencing before declaration
         final_rewards.append(final_reward)
         if get_advantages:
             advantages = get_advantages(value_net, rollout_buffer.observations, returns)
