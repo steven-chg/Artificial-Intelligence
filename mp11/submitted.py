@@ -282,12 +282,12 @@ def train_policy_gradient(env: utils.EnvInterface,
                 policy_gradient_kwargs = dict(
                     policy=                 policy, # Fill in 
                     value_net=              value_net, # Fill in
-                    critic=                 losses_critic, # Fill in
-                    observation=            rollout_buffer.observations, # Fill in
-                    old_logits=             rollout_buffer.old_logits, # Fill in
-                    action=                 rollout_buffer.actions, # Fill in
-                    return_or_advantage=    advantages, # Fill in
-                    returns=                returns, # Fill in 
+                    critic=                 None, # Fill in
+                    observation=            rollout_buffer.observations[batch_start:batch_stop], # Fill in
+                    old_logits=             rollout_buffer.old_logits[batch_start:batch_stop], # Fill in
+                    action=                 rollout_buffer.actions[batch_start:batch_stop], # Fill in
+                    return_or_advantage=    advantages[batch_start:batch_stop], # Fill in
+                    returns=                returns[batch_start:batch_stop], # Fill in 
                     ppo_clip=               ppo_clip
                 )
 
@@ -328,4 +328,20 @@ def get_PPO_policy_gradient_loss (policy: nn.Module,
                 PPO clipping epsilon on the probability ratio
     """
     # YOUR CODE HERE
-    raise NotImplementedError()
+    # raise NotImplementedError()
+
+    # find the newLogits
+    newLogits = policy(observation)
+
+    # # select the log values that are used (based on which action taken in each state)
+    newLogits = torch.tensor([newLogits[i][act].item() for i, act in enumerate(action)], requires_grad=True)
+    old_logits = torch.tensor([old_logits[i][act].item() for i, act in enumerate(action)], requires_grad=True)
+    # selectedLog = selectedLog.to(return_or_advantage.dtype) # convert to float tensor to avoid dot product error
+
+    # find the ratio of newLogits/oldLogits
+    ratio = newLogits/old_logits
+
+    # calculate the final value (make return_or_advantage single dimension in order to perform dot product)
+    finalValue = min(torch.dot(ratio, return_or_advantage.squeeze(dim=1)), torch.dot(torch.clip(ratio, 1 - ppo_clip, 1 + ppo_clip), return_or_advantage.squeeze(dim=1)))
+
+    return -finalValue 
