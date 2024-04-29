@@ -336,12 +336,11 @@ def get_PPO_policy_gradient_loss (policy: nn.Module,
     # # select the log values that are used (based on which action taken in each state)
     newLogits = torch.tensor([newLogits[i][act].item() for i, act in enumerate(action)], requires_grad=True)
     old_logits = torch.tensor([old_logits[i][act].item() for i, act in enumerate(action)], requires_grad=True)
-    # selectedLog = selectedLog.to(return_or_advantage.dtype) # convert to float tensor to avoid dot product error
 
-    # find the ratio of newLogits/oldLogits
-    ratio = newLogits/old_logits
+    # find the ratio of newLogits/oldLogits (subtract then take exponent since original values were log; if a = e^ln(a) and b = e^ln(b), then a/b = e^(ln(a))/e^(ln(b)) = e^(ln(a) - ln(b))
+    ratio = torch.exp(newLogits - old_logits)
 
-    # calculate the final value (make return_or_advantage single dimension in order to perform dot product)
-    finalValue = min(torch.dot(ratio, return_or_advantage.squeeze(dim=1)), torch.dot(torch.clip(ratio, 1 - ppo_clip, 1 + ppo_clip), return_or_advantage.squeeze(dim=1)))
+    # calculate the final value (make return_or_advantage single dimension in order to perform dot product); make sure to divide by batch size
+    finalValue = min(torch.dot(ratio, return_or_advantage.squeeze(dim=1)), torch.dot(torch.clip(ratio, 1 - ppo_clip, 1 + ppo_clip), return_or_advantage.squeeze(dim=1))) / newLogits.size()[0]
 
     return -finalValue 
